@@ -22,11 +22,23 @@
                     contentArea.addClass('active').attr('contenteditable', 'true');
                     
                     var configuration = $.extend(
+                        {},
                         (settings.ckeditor && settings.ckeditor.config ? settings.ckeditor.config : {}), 
                         {
                             // Focus editor on creation
                             on: {
                                 instanceReady: function( evt ) {
+                                    // Call original instanceReady function, if one was passed in the config
+                                    var callback;
+                                    try {
+                                        callback = settings.ckeditor.config.on.instanceReady;
+                                    } catch (err) {
+                                        // No callback passed
+                                    }
+                                    if (callback) {
+                                        callback.call(this, evt);
+                                    }
+                                    
                                     instance.focus();
                                 }
                             }
@@ -58,5 +70,5 @@
         },
 
         initialContent: '<p>Lorem initius... </p>',
-    }
+    };
 })();

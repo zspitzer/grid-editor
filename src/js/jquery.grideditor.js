@@ -25,13 +25,6 @@ $.fn.gridEditor = function( options ) {
 
     self.each(function(baseIndex, baseElem) {
         baseElem = $(baseElem);
-        
-        // Wrap content if it is non-bootstrap
-        if (baseElem.children().length && !baseElem.find('div.row').length) {
-            var children = baseElem.children();
-            var newRow = $('<div class="row"><div class="col-md-12"/></div>').appendTo(baseElem);
-            newRow.find('.col-md-12').append(children);
-        }
 
         var settings = $.extend({
             'new_row_layouts'   : [ // Column layouts for add row buttons
@@ -60,6 +53,7 @@ $.fn.gridEditor = function( options ) {
             'source_textarea'   : ''
         }, options);
 
+
         // Elems
         var canvas,
             mainControls,
@@ -69,6 +63,25 @@ $.fn.gridEditor = function( options ) {
         var colClasses = ['col-md-', 'col-sm-', 'col-xs-'];
         var curColClassIndex = 0; // Index of the column class we are manipulating currently
         var MAX_COL_SIZE = 12;
+        
+        // Copy html to sourceElement if a source textarea is given
+        if (settings.source_textarea) {
+            var sourceEl = $(settings.source_textarea);
+            
+            sourceEl.addClass('ge-html-output');
+            htmlTextArea = sourceEl;
+                
+            if (sourceEl.val()) {
+                baseElem.html(sourceEl.val());
+            }
+        }
+        
+        // Wrap content if it is non-bootstrap
+        if (baseElem.children().length && !baseElem.find('div.row').length) {
+            var children = baseElem.children();
+            var newRow = $('<div class="row"><div class="col-md-12"/></div>').appendTo(baseElem);
+            newRow.find('.col-md-12').append(children);
+        }
 
         setup();
         init();
@@ -76,17 +89,6 @@ $.fn.gridEditor = function( options ) {
         function setup() {
             /* Setup canvas */
             canvas = baseElem.addClass('ge-canvas');
-
-            if (settings.source_textarea) {
-                var sourceEl = $(settings.source_textarea);
-                
-                sourceEl.addClass('ge-html-output');
-                    htmlTextArea = sourceEl;
-                    
-                if (sourceEl.val()) {
-                    self.html(sourceEl.val());
-                }
-            }
             
             if (typeof htmlTextArea === 'undefined' || !htmlTextArea.length) {
                 htmlTextArea = $('<textarea class="ge-html-output"/>').insertBefore(canvas);
@@ -256,9 +258,11 @@ $.fn.gridEditor = function( options ) {
                     createTool(drawer, t.title || '', t.className || '', t.iconClass || 'glyphicon-wrench', t.on);
                 });
                 createTool(drawer, 'Remove row', '', 'glyphicon-trash', function() {
-                    row.slideUp(function() {
-                        row.remove();
-                    });
+                    if (window.confirm('Delete row?')) {
+                        row.slideUp(function() {
+                            row.remove();
+                        });
+                    }
                 });
                 createTool(drawer, 'Add column', 'ge-add-column', 'glyphicon-plus-sign', function() {
                     row.append(createColumn(3));
@@ -310,13 +314,15 @@ $.fn.gridEditor = function( options ) {
                 });
 
                 createTool(drawer, 'Remove col', '', 'glyphicon-trash', function() {
-                    col.animate({
-                        opacity: 'hide',
-                        width: 'hide',
-                        height: 'hide'
-                    }, 400, function() {
-                        col.remove();
-                    });
+                    if (window.confirm('Delete column?')) {
+                        col.animate({
+                            opacity: 'hide',
+                            width: 'hide',
+                            height: 'hide'
+                        }, 400, function() {
+                            col.remove();
+                        });
+                    }
                 });
 
                 createTool(drawer, 'Add row', 'ge-add-row', 'glyphicon-plus-sign', function() {
@@ -352,6 +358,9 @@ $.fn.gridEditor = function( options ) {
                 .val(container.attr('id'))
                 .attr('title', 'Set a unique identifier')
                 .appendTo(detailsDiv)
+                .change(function() {
+                    container.attr('id', this.value);
+                })
             ;
 
             var classGroup = $('<div class="btn-group" />').appendTo(detailsDiv);
